@@ -239,8 +239,7 @@ async def root():
         "message": "NASA Weather Probability API",
         "version": "2.0",
         "endpoints": {
-            "weather_probabilities": "/api/weather/probabilities",
-            "weather_trends": "/api/weather/trends", 
+            "weather_probabilities": "/api/weather/probabilities", 
             "download_data": "/api/weather/download",
             "variables_info": "/api/variables",
             "health": "/health"
@@ -314,18 +313,18 @@ async def get_weather_probabilities(
     
     return results
 
-
-
 @app.get("/api/weather/download")
 async def download_weather_data(
     city: str = Query(..., description="City name"),
     month: int = Query(..., ge=1, le=12, description="Month (1-12)"),
     day: int = Query(..., ge=1, le=31, description="Day (1-31)"),
-    start_year: int = Query(1980, ge=1980, le=2020),
-    end_year: int = Query(2020, ge=1981, le=2023),
     format: str = Query("csv", regex="^(csv|json)$")
 ):
     """Download weather data in CSV or JSON format"""
+
+    # fixed years for NASA POWER dataset
+    start_year = 1980
+    end_year = 2020
     
     coords = get_city_coords(city)
     if not coords:
@@ -333,7 +332,7 @@ async def download_weather_data(
     
     # Get all available variables
     all_variables = list(WEATHER_VARIABLES.keys())
-    raw_data = get_nasa_weather_data(coords["lat"], coords["lon"], start_year, end_year, all_variables)
+    raw_data = get_nasa_weather_data(coords["lat"], coords["lon"], all_variables)
     if not raw_data:
         raise HTTPException(status_code=500, detail="Failed to fetch data from NASA API")
     
@@ -402,7 +401,7 @@ async def get_chart_data(
         raise HTTPException(status_code=404, detail=f"City '{city}' not found")
     
     target_doy = f"{month:02d}-{day:02d}"
-    raw_data = get_nasa_weather_data(coords["lat"], coords["lon"], 1980, 2020, [variable])
+    raw_data = get_nasa_weather_data(coords["lat"], coords["lon"], [variable])
     if not raw_data:
         raise HTTPException(status_code=500, detail="Failed to fetch data from NASA API")
     
